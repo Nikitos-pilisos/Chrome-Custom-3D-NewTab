@@ -13,3 +13,7 @@ Drag-and-drop support.
 <img width="1893" height="1245" alt="chrome_TeVDnGUThC" src="https://github.com/user-attachments/assets/ddef6ddd-8f7a-47c6-94a0-1fc685d3978e" />
 <img width="1893" height="1245" alt="chrome_zh0x1hrM5Q" src="https://github.com/user-attachments/assets/8e726c12-d353-49db-b515-a56515c1bc7a" />
 <img width="1893" height="1245" alt="chrome_1adKRWazVV" src="https://github.com/user-attachments/assets/7f2eacfc-3371-4e37-a6ed-396b63237cfe" />
+
+* HTML5 / CSS3 (3D Transforms, Perspective, CSS Variables)
+* Vanilla JavaScript (Web Audio API, Drag and Drop API, LocalStorage)
+* Chrome Extensions API (Manifest V3)
