@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>New Tab</title>
+  <style>
+    :root {
+      --bg: #07090e;
+      --accent: #00e5ff;
+      --card-w: 160px;
+      --card-h: 230px;
+      --refl-blur: 4px;
+      --refl-opacity: 0.45;
+      --custom-bg: none;
+      --font-size: 0.9rem;
+      --sub-size: 0.72rem;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg);
+      background-image: var(--custom-bg), radial-gradient(ellipse at top, #161f30 0%, var(--bg) 75%);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      user-select: none;
+      transition: background 0.3s ease;
+    }
+
+    /* Верхняя панель */
+    .top-bar {
+      position: fixed;
+      top: 20px;
+      left: 24px;
+      right: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .action-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 16px;
+      border-radius: 20px;
+      background: rgba(18, 22, 32, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.85);
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      transition: border-color 0.2s, color 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+
+    .action-btn:hover {
+      border-color: var(--accent);
+      color: #fff;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(0, 229, 255, 0.2);
+    }
+
+    .google-icon { width: 16px; height: 16px; flex-shrink: 0; }
+
+    /* Часы */
+    .clock {
+      font-size: 3.8rem;
+      font-weight: 200;
+      letter-spacing: 3px;
+      color: rgba(255, 255, 255, 0.9);
+      text-shadow: 0 0 25px rgba(0, 229, 255, 0.25);
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 0.8rem;
+    }
+
+    /* Поиск */
+    .search-wrap {
+      margin-bottom: 2.2rem;
+      position: relative;
+      z-index: 2;
+      width: 480px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 13px 22px;
+      border-radius: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(18, 22, 32, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+      transition: border-color 0.25s, box-shadow 0.25s, background-color 0.25s;
+    }
+
+    .search-input::placeholder { color: rgba(255, 255, 255, 0.35); }
+    .search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 20px rgba(0, 229, 255, 0.25), 0 12px 30px rgba(0,0,0,0.6);
+      background: rgba(18, 22, 32, 0.9);
+    }
+
+    /* 3D Сцена */
+    .stage {
+      perspective: 1200px;
+      padding-bottom: calc(var(--card-h) * 0.75);
+      width: 100%;
+      max-width: 1400px;
+      display: flex;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+      transition: padding-bottom 0.25s ease;
+    }
+
+    body.no-reflection .stage { padding-bottom: 20px; }
+
+    .deck {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 28px;
+      align-items: center;
+      justify-content: center;
+      transform-style: preserve-3d;
+      padding: 10px;
+    }
+
+    /* Карточка */
+    .card-wrap {
+      position: relative;
+      width: var(--card-w);
+      height: var(--card-h);
+      cursor: grab;
+      will-change: transform, opacity;
+      transition: width 0.2s ease, height 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .card-wrap:active { cursor: grabbing; }
+    .card-wrap.dragging { opacity: 0.3; transform: scale(0.95); }
+    .card-wrap.drag-over {
+      transform: scale(1.05);
+      outline: 2px dashed var(--accent);
+      outline-offset: 4px;
+      border-radius: 18px;
+    }
+
+    .card {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background-color: #121620;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+      transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                  box-shadow 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+                  border-color 0.35s ease;
+      z-index: 2;
+    }
+
+    .card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      pointer-events: none;
+      transition: transform 0.4s ease;
+    }
+
+    .card .overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.2) 55%, transparent 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 14px 12px;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    body.hover-only-title .card .overlay { opacity: 0; }
+    body.hover-only-title .card-wrap:hover .card .overlay { opacity: 1; }
+
+    .card .title {
+      font-size: var(--font-size);
+      font-weight: 600;
+      color: #fff;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .card .subtitle {
+      font-size: var(--sub-size);
+      color: rgba(255, 255, 255, 0.55);
+      margin-top: 2px;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    /* Отражение */
+    .reflection {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 16px;
+      overflow: hidden;
+      transform: scaleY(-1);
+      opacity: var(--refl-opacity);
+      filter: blur(var(--refl-blur));
+      -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 80%);
+      mask-image: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 80%);
+      pointer-events: none;
+      z-index: 1;
+      will-change: transform, opacity;
+      transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s;
+    }
+
+    body.no-reflection .reflection { display: none !important; }
+
+    .reflection img { width: 100%; height: 100%; object-fit: cover; }
+
+    .card-wrap:hover .card {
+      transform: translateY(-16px) scale(1.03);
+      border-color: rgba(0, 229, 255, 0.5);
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.85), 0 0 20px rgba(0, 229, 255, 0.25);
+    }
+
+    .card-wrap:hover .card img { transform: scale(1.08); }
+    .card-wrap:hover .reflection {
+      transform: scaleY(-1) translateY(-16px) scale(1.03);
+      opacity: calc(var(--refl-opacity) * 1.35);
+    }
+
+    .card-edit-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s, background-color 0.2s;
+      z-index: 5;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .card-wrap:hover .card-edit-btn { opacity: 1; }
+    .card-edit-btn:hover { background-color: var(--accent); color: #000; }
+
+    .card-add {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 1px dashed rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.02);
+      gap: 10px;
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .card-wrap:hover .card-add {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(0, 229, 255, 0.03);
+    }
+
+    .card-add .plus-icon { font-size: 2rem; font-weight: 300; }
+
+    /* Модалки */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .modal {
+      width: 420px;
+      background: #11151f;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal h3 { font-size: 1.1rem; font-weight: 600; }
+
+    .modal label {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.6);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .modal input[type="text"], .modal select {
+      padding: 10px 14px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      color: #fff;
+      outline: none;
+      font-size: 0.9rem;
+    }
+
+    .modal select option { background: #11151f; color: #fff; }
+    .modal input[type="range"] { accent-color: var(--accent); cursor: pointer; }
+
+    .range-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .checkbox-row {
+      flex-direction: row !important;
+      align-items: center;
+      gap: 10px !important;
+      cursor: pointer;
+      text-transform: none !important;
+      font-size: 0.85rem !important;
+    }
+
+    .modal input:focus, .modal select:focus { border-color: var(--accent); }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: opacity 0.2s;
+    }
+
+    .btn-save { background: var(--accent); color: #07090e; }
+    .btn-cancel { background: rgba(255, 255, 255, 0.1); color: #fff; }
+    .btn-delete { background: rgba(255, 59, 48, 0.2); color: #ff453a; border: 1px solid rgba(255, 59, 48, 0.3); }
+    .btn:hover { opacity: 0.85; }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <a href="https://www.google.com" class="action-btn" id="googleBtn" title="Google">
+      <svg class="google-icon" viewBox="0 0 24 24">
+        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z"/>
+        <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.97 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+      </svg>
+      Google
+    </a>
+
+    <button class="action-btn" id="openSettingsBtn">⚙ <span data-i18n="settingsTitle">Настройки вида</span></button>
+  </div>
+
+  <div class="clock" id="clock">00:00</div>
+
+  <form class="search-wrap" action="https://www.google.com/search" method="get">
+    <input type="text" name="q" id="searchInput" class="search-input" placeholder="Поиск в Google..." autofocus autocomplete="off">
+  </form>
+
+  <div class="stage">
+    <div class="deck" id="cardDeck"></div>
+  </div>
+
+  <!-- Модалка ярлыка -->
+  <div class="modal-backdrop" id="cardModal">
+    <div class="modal">
+      <h3 id="cardModalTitle" data-i18n="shortcut">Ярлык</h3>
+      <label><span data-i18n="labelTitle">Название</span> <input type="text" id="inputTitle" placeholder="GitHub, Docs..."></label>
+      <label><span data-i18n="labelSubtitle">Подзаголовок</span> <input type="text" id="inputSubtitle" placeholder="Repositories..."></label>
+      <label><span data-i18n="labelUrl">Ссылка или файл</span> <input type="text" id="inputUrl" placeholder="https://... или D:/Projects/..."></label>
+      <label><span data-i18n="labelPoster">URL постера</span> <input type="text" id="inputImage" placeholder="https://..."></label>
+      <div class="modal-actions">
+        <button class="btn btn-delete" id="btnDelete" style="display: none;" data-i18n="btnDelete">Удалить</button>
+        <button class="btn btn-cancel" id="btnCardCancel" data-i18n="btnCancel">Отмена</button>
+        <button class="btn btn-save" id="btnCardSave" data-i18n="btnSave">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модалка настроек -->
+  <div class="modal-backdrop" id="settingsModal">
+    <div class="modal">
+      <h3 data-i18n="settingsHeading">Параметры оформления</h3>
+
+      <label>
+        <span data-i18n="langLabel">Язык интерфейса</span>
+        <select id="settingLang">
+          <option value="ru">Русский (RU)</option>
+          <option value="en">English (EN)</option>
+          <option value="pt">Português - Brasil (PT-BR)</option>
+          <option value="es">Español (ES)</option>
+        </select>
+      </label>
+
+      <label>
+        <div class="range-row"><span data-i18n="cardWidth">Ширина баннера</span><span id="widthVal">160px</span></div>
+        <input type="range" id="settingWidth" min="100" max="360" step="5" value="160">
+      </label>
+
+      <label>
+        <div class="range-row"><span data-i18n="cardHeight">Высота баннера</span><span id="heightVal">230px</span></div>
+        <input type="range" id="settingHeight" min="80" max="400" step="5" value="230">
+      </label>
+
+      <label>
+        <div class="range-row"><span data-i18n="fontSize">Размер подписи</span><span id="fontVal">0.9rem</span></div>
+        <input type="range" id="settingFont" min="0.75" max="1.3" step="0.05" value="0.9">
+      </label>
+
+      <label>
+        <div class="range-row"><span data-i18n="floorBlur">Размытие пола</span><span id="blurVal">4px</span></div>
+        <input type="range" id="settingBlur" min="0" max="25" step="1" value="4">
+      </label>
+
+      <label>
+        <div class="range-row"><span data-i18n="reflOpacity">Яркость отражения</span><span id="opacityVal">45%</span></div>
+        <input type="range" id="settingOpacity" min="0" max="90" step="5" value="45">
+      </label>
+
+      <label>
+        <span data-i18n="bgUrl">URL Фоновой картинки</span>
+        <input type="text" id="settingBg" placeholder="https://... (пусто для градиента)">
+      </label>
+
+      <label class="checkbox-row">
+        <input type="checkbox" id="settingHoverTitle">
+        <span data-i18n="hoverOnlyTitle">Показывать подпись только при ховере</span>
+      </label>
+
+      <label class="checkbox-row">
+        <input type="checkbox" id="settingHideAdd">
+        <span data-i18n="hideAddBtn">Скрыть кнопку добавления (+)</span>
+      </label>
+
+      <label class="checkbox-row">
+        <input type="checkbox" id="settingSound">
+        <span data-i18n="uiSound">Включить звук UI (Web Audio)</span>
+      </label>
+
+      <div class="modal-actions">
+        <button class="btn btn-save" id="btnSettingsClose" data-i18n="btnDone">Готово</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

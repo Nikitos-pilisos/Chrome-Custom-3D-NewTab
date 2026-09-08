@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Custom 3D NewTab",
+  "version": "1.1",
+  "chrome_url_overrides": {
+    "newtab": "index.html"
+  },
+  "permissions": [
+    "tabs"
+  ],
+  "host_permissions": [
+    "file:///*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; img-src 'self' https: data:;"
+  }
+}
